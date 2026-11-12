@@ -39,6 +39,6 @@ with tab_logs:
         df = pd.DataFrame(rows)
         st.metric("Runs", len(df))
         st.metric("Avg latency (ms)", int(df["latency_ms"].mean()))
-        st.dataframe(df.iloc[::-1], use_container_width=True)
+        st.dataframe(df.iloc[::-1], width="stretch")
     else:
         st.info("No runs yet.")
