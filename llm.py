@@ -10,14 +10,29 @@ load_dotenv()
 
 
 def _key() -> str:
+    """Key from env/.env first, then Streamlit secrets (top level or inside any [section])."""
     key = os.getenv("DEEPSEEK_API_KEY")
-    if not key:
-        try:
-            import streamlit as st
-            key = st.secrets["DEEPSEEK_API_KEY"]
-        except Exception:
-            raise RuntimeError("DEEPSEEK_API_KEY not found in .env or Streamlit secrets")
-    return key
+    if key:
+        return key.strip()
+    seen = []
+    try:
+        import streamlit as st
+        secrets = dict(st.secrets)
+        seen = list(secrets)
+        for name, val in secrets.items():
+            if name.upper() == "DEEPSEEK_API_KEY":
+                return str(val).strip()
+            if hasattr(val, "items"):
+                for sub, v in val.items():
+                    if sub.upper() == "DEEPSEEK_API_KEY":
+                        return str(v).strip()
+    except Exception:
+        pass
+    raise RuntimeError(
+        "DEEPSEEK_API_KEY not found. Locally: add it to .env. "
+        'Streamlit Cloud: Settings > Secrets > DEEPSEEK_API_KEY = "sk-..." then Reboot app. '
+        f"Secret names Streamlit can see: {seen or 'none'}"
+    )
 
 
 client = OpenAI(api_key=_key(), base_url="https://api.deepseek.com")
